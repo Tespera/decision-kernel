@@ -1,0 +1,21 @@
+[project]
+name = "decision-kernel"
+version = "0.1.0"
+description = "从 Claude Code 会话记录蒸馏个人决策内核：让 AI 按你的判断方式做取舍，而不是按一份规则清单"
+readme = "README.md"
+authors = [
+    { name = "Eliauk", email = "tespera@foxmail.com" }
+]
+requires-python = ">=3.13"
+dependencies = []
+
+license = "MIT"
+keywords = ["claude-code", "decision", "preferences", "llm", "memory"]
+
+[project.scripts]
+dk = "decision_kernel:main"
+decision-kernel = "decision_kernel:main"
+
+[build-system]
+requires = ["uv_build>=0.9.26,<0.10.0"]
+build-backend = "uv_build"
