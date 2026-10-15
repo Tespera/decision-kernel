@@ -1,7 +1,7 @@
 [project]
 name = "decision-kernel"
 version = "0.1.0"
-description = "从 Claude Code 会话记录蒸馏个人决策内核：让 AI 按你的判断方式做取舍，而不是按一份规则清单"
+description = "Teach Claude Code how you make decisions — distil a personal decision kernel from your own session history. 从你的 Claude Code 对话记录里蒸馏个人决策内核。"
 readme = "README.md"
 authors = [
     { name = "Eliauk", email = "tespera@foxmail.com" }
@@ -10,7 +10,11 @@ requires-python = ">=3.13"
 dependencies = []
 
 license = "MIT"
-keywords = ["claude-code", "decision", "preferences", "llm", "memory"]
+keywords = ["claude-code", "claude", "anthropic", "ai-coding", "llm", "prompt-engineering", "decision-making", "preferences", "agent-memory", "vibe-coding"]
+
+[project.urls]
+Homepage = "https://github.com/Tespera/decision-kernel"
+Issues = "https://github.com/Tespera/decision-kernel/issues"
 
 [project.scripts]
 dk = "decision_kernel:main"
