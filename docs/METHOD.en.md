@@ -40,6 +40,14 @@ Two deliberate constraints:
 - **No quotes, project names or business objects in the kernel body.** It has to be usable as-is in any project. Mention a business object and the AI will treat the entry as a rule for that one project. Quotes and evidence are kept separately, in the evidence map in the workbench.
 - **Motives must be backed by the user's own words, not reverse-engineered by the AI.** The second round mined 125 motive statements from the 139 fragments that included a reason, and checked one by one that every entry's "Why" rests on reasons the user actually gave.
 
+### Optional second layer: scenario notes
+
+The kernel has to stay short to be always loaded and still generalise to cases nobody wrote down. But synthesis keeps turning up something else: **how** an entry applies in a specific situation (what K4 means for deleting data, or for pushing to a remote).
+Putting that in the kernel bloats what every session carries; throwing it away wastes it. The author keeps a second layer of **scenario notes**: one file per entry, not always loaded, read by the AI when a situation calls for it, following a one-line pointer in the kernel.
+
+Each finding goes to exactly one place: new criteria or boundaries go into the kernel (once they clear the evidence bar); concrete uses of an existing entry go into scenario notes (a single occurrence is enough); possible new criteria without enough evidence go onto the watchlist.
+Notes only describe usage. Don't use them to slip in new criteria, or the always-loaded kernel and the on-demand notes end up saying different things. The layer is optional: enable it with `dk init --details`; `DETAILS_GUIDE.md` in the workbench explains how to write them.
+
 ## Pipeline
 
 ```
@@ -105,7 +113,7 @@ The kernel isn't written in one go. Every few weeks, a review scans only the ses
 - **Treating the AI's synthesis as the user's principle.** A label the AI had come up with itself was written into long-term memory as one of the user's "hard rules", then cited again and again, even for architecture decisions, until it turned out the user had never said it. Hence: quotes must be verifiable, and inferences must be labelled.
 - **Writing rules.** Every time you revise the kernel, ask yourself: is this a motive and a test, or has it turned back into "when X, do Y"?
 - **Session logs get deleted.** By default Claude Code keeps session logs for only 30 days (`cleanupPeriodDays`, which you can raise in `~/.claude/settings.json`), and once they're gone you can't extract from them again. The corpus in `incr-*/` is the only copy of the original quotes. Don't delete it as if it were an intermediate file you can rebuild.
-- **Adding entries to pad the count.** A decision that shows up only once goes into scenario-specific notes or the watchlist, not into the always-loaded kernel. The more always-loaded content there is, the harder it is for the AI to see what matters.
+- **Adding entries to pad the count.** A decision that shows up only once goes into scenario notes (if it's a use of an existing entry) or the watchlist (if it might be a new criterion), not into the always-loaded kernel. The more always-loaded content there is, the harder it is for the AI to see what matters.
 
 ## Limitations
 

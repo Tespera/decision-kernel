@@ -1,6 +1,6 @@
 [project]
 name = "decision-kernel"
-version = "0.1.0"
+version = "0.2.0"
 description = "Teach Claude Code how you make decisions — distil a personal decision kernel from your own session history. 从你的 Claude Code 对话记录里蒸馏个人决策内核。"
 readme = "README.md"
 authors = [

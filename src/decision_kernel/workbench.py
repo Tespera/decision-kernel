@@ -10,6 +10,7 @@
   kernel_map.jsonl      裁决记录 → 内核编号 的映射（{"id", "kernel"}）
   evidence-map.md       每条内核的证据溯源表（evidence 命令生成）
   watchlist.md          暂缓的候选与试行修订
+  details-dir           可选：场景细则目录的路径（dk init --details 写入），没有这个文件 = 未启用
   incr/                 本轮工作目录；下一轮 scan 开始时归档为 incr-<上次日期>/
   incr-YYYY-MM-DD/      历次归档
 
@@ -36,6 +37,19 @@ class Workbench:
 
     def path(self, name):
         return self.root / name
+
+    @property
+    def details_file(self):
+        return self.root / "details-dir"
+
+    def details_dir(self):
+        """场景细则目录（可选层）；未启用返回 None。返回 (展示用路径, 实际路径)。"""
+        f = self.details_file
+        if f.exists():
+            s = f.read_text(encoding="utf-8").strip()
+            if s:
+                return s, Path(s).expanduser()
+        return None
 
     def last_run(self):
         """上次完成复盘的日期（YYYY-MM-DD）；从没跑过返回 None。"""

@@ -9,6 +9,7 @@ description: 首次蒸馏——从全部 Claude Code 会话记录里提炼你的
 从而少来问你。方法与踩过的坑见工作目录里的 `METHOD.md`（`dk init` 放入），**动手前先读一遍**。
 
 工作目录默认 `~/.decision-kernel`（可用 `DK_WORKBENCH` 改）。内核成品默认写到 `~/.claude/rules/decision-kernel.md`。
+可选的第二层「场景细则」（某条内核在具体场景下怎么用，按需查阅）见工作目录里的 `DETAILS_GUIDE.md`。
 
 ## 步骤
 
@@ -67,8 +68,13 @@ dk axes          # 生成 incr/axes.md：每条记录一行「权衡轴 · 领�
 **内核正文不写原话、不写项目名和业务对象**——它要能被任何项目引用，证据留在工作目录。
 把初稿给用户**逐条审**：保留 / 改写 / 删除 / 合并。用户说「太死」时，多半是写成了规则，退回动机层重写。
 
+归纳时会遇到一类东西：它是某条内核在具体场景下的做法（「删数据时先停用」「推送前先本地验证」），太具体、放进内核会撑大常驻内容。
+把它们单独列成**细则候选**，和初稿一起给用户看，问要不要启用场景细则层。用户要，就 `dk init --details`（默认目录
+`~/.claude/decision-kernel-details`，也可以指定），按 `DETAILS_GUIDE.md` 写；用户不要，就留在溯源表里，不硬塞进内核。
+
 ### 7. 落地
-- 写入 `~/.claude/rules/decision-kernel.md`，并在 `~/.claude/CLAUDE.md` 加一行 `@~/.claude/rules/decision-kernel.md` 让它常驻。
+- 写入 `~/.claude/rules/decision-kernel.md`。`rules/` 下的文件 Claude Code 每个会话自动加载，不需要再在 `CLAUDE.md` 里引用。
+- 启用了场景细则：按确认把细则写进细则目录，在内核总则下加一行指向细则目录的指引，跑 `dk details` 检查（指引缺失会提示）。
 - 把每条有效记录归到对应内核，写 `incr/kernel_map.jsonl`（`{"id":"J1-003","kernel":"K2"}`），动机回填 `kernel`。
 ```bash
 dk merge                                            # 记录、动机、映射并入累积文件
@@ -80,4 +86,5 @@ cd ~/.decision-kernel && git add -A && git commit -qm "distill: 首次蒸馏"
 ## 硬约束
 - 原话必须过 `dk verify`；任何「用户原话」都要能在原始记录里搜到。
 - 内核只写动机与判据，不写成「遇到 X 就做 Y」。
-- 未经用户逐条确认，不写入 `~/.claude/rules/`。
+- 未经用户逐条确认，不写入 `~/.claude/rules/`，也不写细则。
+- 细则只写已有内核的用法，不借细则加新判据。

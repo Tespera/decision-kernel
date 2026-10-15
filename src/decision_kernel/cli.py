@@ -18,7 +18,10 @@ from . import verify as VF
 from .workbench import Workbench
 
 TEMPLATES = ("EXTRACT_GUIDE.md", "MOTIVE_GUIDE.md", "watchlist.md")
-REFERENCES = ("METHOD.md", "decision-kernel.example.md")   # 只读参考，init 时总是更新到当前版本
+REFERENCES = ("METHOD.md", "decision-kernel.example.md", "DETAILS_GUIDE.md")   # 只读参考，init 时总是更新到当前版本
+DEFAULT_DETAILS = "~/.claude/decision-kernel-details"
+DEFAULT_KERNEL = "~/.claude/rules/decision-kernel.md"
+RULES_DIR = Path("~/.claude/rules").expanduser()
 FINISHED = ".finished"          # incr/ 里的完成标记，内容是 finish 的日期
 
 
@@ -32,6 +35,7 @@ def _template(name):
 
 def cmd_init(args):
     wb = Workbench(args.dir or args.workbench)
+    details = _details_path(args.details) if args.details else None   # 先校验，不合格就什么都不建
     wb.root.mkdir(parents=True, exist_ok=True)
     created = []
     for name in TEMPLATES:
@@ -50,10 +54,33 @@ def cmd_init(args):
         if not dst.exists():
             dst.touch()
             created.append(name)
+    if details:
+        details.mkdir(parents=True, exist_ok=True)
+        wb.details_file.write_text(_tilde(details) + "\n", encoding="utf-8")
     _out(f"工作目录：{wb.root}")
     _out(f"新建：{', '.join(created) if created else '（都已存在，未改动）'}")
+    if details:
+        _out(f"场景细则目录：{_tilde(details)}（写法见工作目录里的 DETAILS_GUIDE.md；dk details 查看）")
     if wb.root != Workbench().root:
         _out(f"提示：后续命令加 --workbench {wb.root}，或 export DK_WORKBENCH={wb.root}")
+
+
+def _tilde(path):
+    """家目录下的路径写成 ~/…，内核里的指引和展示都用这种写法，换机器也成立。"""
+    home = Path.home()
+    try:
+        return "~/" + str(path.relative_to(home))
+    except ValueError:
+        return str(path)
+
+
+def _details_path(given):
+    real = Path(given).expanduser().resolve()
+    rules = RULES_DIR.resolve()
+    if real == rules or rules in real.parents:
+        raise SystemExit(f"细则目录不能放在 {_tilde(RULES_DIR)}/ 下：Claude Code 会把那里的 .md 全部常驻加载，"
+                         "细则就不再是按需查阅了。换个目录，比如默认的 " + DEFAULT_DETAILS)
+    return real
 
 
 def _archive_run(wb, redo=False):
@@ -243,6 +270,44 @@ def cmd_finish(args):
     _out(f"last-run = {day}（下次 scan 从这天开始，本轮 incr/ 届时归档为 incr-{day}/）")
 
 
+RE_SCENE = re.compile(r"^##\s+\S")
+RE_KID = re.compile(r"\bK\d+\b")
+
+
+def cmd_details(args):
+    """列出场景细则：每篇对应哪些内核、有几个场景；哪些内核还没有细则；内核里有没有指向细则目录的指引。"""
+    wb = Workbench(args.workbench).require()
+    cfg = wb.details_dir()
+    if not cfg:
+        _out(f"未启用场景细则。启用：dk init --details [目录]（默认 {DEFAULT_DETAILS}）")
+        return
+    shown, real = cfg
+    files = sorted(real.glob("*.md")) if real.is_dir() else []
+    _out(f"场景细则目录：{shown}" + ("" if real.is_dir() else "（不存在）") + f" · {len(files)} 篇")
+    covered = set()
+    for f in files:
+        text = f.read_text(encoding="utf-8")
+        head = text.split("\n## ", 1)[0]            # 只看第一个场景标题之前的部分：标题、「依据」行
+        kids = sorted(set(RE_KID.findall(f.stem + "\n" + head)), key=lambda k: int(k[1:]))
+        covered |= set(kids)
+        scenes = sum(1 for l in text.splitlines() if RE_SCENE.match(l))
+        day = datetime.date.fromtimestamp(f.stat().st_mtime).isoformat()
+        _out(f"  {f.name}  对应 {' '.join(kids) or '？（开头没写内核编号）'} · 场景 {scenes} · 更新 {day}")
+    kpath = Path(args.kernel).expanduser()
+    if not kpath.exists():
+        _out(f"（内核文件 {args.kernel} 不存在，跳过覆盖与指引检查）")
+        return
+    ktext = kpath.read_text(encoding="utf-8")
+    missing = [k for k, _ in EV.kernel_names(ktext) if k not in covered]
+    if missing:
+        _out(f"还没有细则的内核：{' '.join(missing)}（没有就不写，细则只记真实出现过的用法）")
+    if shown in ktext or str(real) in ktext:
+        _out("内核里的指引：有")
+    else:
+        _out(f"⚠ 内核里还没有指向细则目录的指引，AI 不会知道去哪读。在内核总则下加一行，例如：\n"
+             f"  需要某条内核在具体场景下的做法时，读 {shown}/ 里对应编号的细则。判据在内核，用法在细则。")
+
+
 def cmd_status(args):
     wb = Workbench(args.workbench)
     _out(f"工作目录：{wb.root}{'' if wb.root.is_dir() else '（不存在，先 dk init）'}")
@@ -260,6 +325,12 @@ def cmd_status(args):
     arch = sorted(p.name for p in wb.root.glob("incr-*"))
     if arch:
         _out(f"历次归档：{' '.join(arch)}")
+    cfg = wb.details_dir()
+    if cfg:
+        n = len(list(cfg[1].glob("*.md"))) if cfg[1].is_dir() else 0
+        _out(f"场景细则：{cfg[0]}（{n} 篇，dk details 查看）")
+    else:
+        _out("场景细则：未启用（可选，dk init --details）")
 
 
 def cmd_install_commands(args):
@@ -295,6 +366,8 @@ def main(argv=None):
 
     p = sub.add_parser("init", help="建工作目录并放入抽取规范等模板")
     p.add_argument("dir", nargs="?")
+    p.add_argument("--details", nargs="?", const=DEFAULT_DETAILS, metavar="目录",
+                   help=f"启用可选的场景细则层，细则放在这个目录（默认 {DEFAULT_DETAILS}）")
     p.set_defaults(fn=cmd_init)
 
     p = sub.add_parser("install-commands", help="把 /distill、/decisions 两个命令装进 Claude Code")
@@ -336,6 +409,10 @@ def main(argv=None):
     p = sub.add_parser("finish", help="记录本次复盘日期，作为下次 scan 的起点")
     p.add_argument("--date", help="默认今天")
     p.set_defaults(fn=cmd_finish)
+
+    p = sub.add_parser("details", help="查看场景细则：各篇对应的内核、缺细则的内核、内核里的指引")
+    p.add_argument("--kernel", default=DEFAULT_KERNEL, help=f"内核文件（默认 {DEFAULT_KERNEL}）")
+    p.set_defaults(fn=cmd_details)
 
     p = sub.add_parser("status", help="查看工作目录状态")
     p.set_defaults(fn=cmd_status)

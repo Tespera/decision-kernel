@@ -50,6 +50,8 @@ AI 缺的不是规则，是你**为什么**这么选。上面两次回答背后�
 
 最后还有一段「冲突裁决」：几条同时命中时，听哪一条的。
 
+**可选的第二层：场景细则。** 某条内核在具体场景下怎么用（比如「按可逆性分配谨慎」落到删数据、推送远端上各怎么做），太具体、放进内核会撑大常驻内容。启用细则层后，这些写进按内核分篇的细则，不常驻，AI 遇到具体场景时才去读。用 `dk init --details` 开启。
+
 ## 真实跑出来的数字
 
 作者用它蒸馏了自己约 10 个月的 Claude Code 记录：
@@ -205,7 +207,7 @@ flowchart TD
 | 命令 | 作用 |
 |---|---|
 | `dk install-commands [--force]` | 把 `/distill`、`/decisions` 装进 `~/.claude/commands/`；已有同名且内容不同的文件默认跳过，`--force` 先备份为 `.bak` 再覆盖 |
-| `dk init [目录]` | 建工作目录（默认 `~/.decision-kernel`，或 `$DK_WORKBENCH`），放入抽取规范、方法说明和示例内核 |
+| `dk init [目录] [--details [细则目录]]` | 建工作目录（默认 `~/.decision-kernel`，或 `$DK_WORKBENCH`），放入抽取规范、方法说明和示例内核；加 `--details` 启用可选的场景细则层（默认 `~/.claude/decision-kernel-details`，不能放在 `~/.claude/rules/` 下） |
 | `dk scan [--all \| --since 日期]` | 筛选片段；默认从上次复盘结束处接着扫 |
 | `dk batch [--size 150]` | 切批，交给多个 subagent 并行抽取；编号自动避开历史 |
 | `dk verify` | 逐字校验原话；有问题时退出码为 1 |
@@ -213,6 +215,7 @@ flowchart TD
 | `dk merge` | 把本轮记录、动机、内核映射并入累积文件 |
 | `dk evidence --kernel 路径` | 生成证据溯源表 |
 | `dk finish` | 记下本轮完成日期，作为下次扫描的起点 |
+| `dk details` | 查看场景细则：每篇对应哪条内核、哪些内核还没有细则、内核里有没有指向细则的指引 |
 | `dk status` | 查看工作目录状态 |
 
 每一轮都在 `incr/` 里进行，完成后自动归档。没完成的那一轮不会被覆盖，`--redo` 只会把它挪走，不会删除。

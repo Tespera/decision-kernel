@@ -190,6 +190,44 @@ class CliTest(unittest.TestCase):
         self.assertNotEqual((dst / "distill.md").read_text(encoding="utf-8"), "我自己的版本")
 
 
+class DetailsTest(unittest.TestCase):
+    """可选的场景细则层"""
+
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp())
+        self.wb = self.tmp / "wb"
+        self.kernel = self.tmp / "decision-kernel.md"
+        self.kernel.write_text("总则\n\n## K1 · 要最佳解\n正文\n\n## K2 · 前提要硬\n正文\n", encoding="utf-8")
+
+    def test_off_by_default(self):
+        run_cli("init", str(self.wb))
+        self.assertFalse((self.wb / "details-dir").exists())
+        self.assertTrue((self.wb / "DETAILS_GUIDE.md").exists())           # 写法说明总在，启用与否由用户定
+        self.assertIn("场景细则：未启用", run_cli("-w", str(self.wb), "status"))
+        self.assertIn("未启用场景细则", run_cli("-w", str(self.wb), "details", "--kernel", str(self.kernel)))
+
+    def test_lists_coverage_and_checks_pointer(self):
+        details = self.tmp / "details"
+        run_cli("init", str(self.wb), "--details", str(details))
+        self.assertEqual((self.wb / "details-dir").read_text(encoding="utf-8").strip(), str(details.resolve()))
+        (details / "K1-best.md").write_text("# K1 · 细则\n\n依据：K1。\n\n## 选型\n- 做法（J1-001）\n\n## 依赖\n"
+                                             "- 提到 K2 的正文不算对应（J1-002）\n", encoding="utf-8")
+        out = run_cli("-w", str(self.wb), "details", "--kernel", str(self.kernel))
+        self.assertIn("K1-best.md  对应 K1 · 场景 2", out)
+        self.assertIn("还没有细则的内核：K2", out)                         # 正文里提到的 K2 不算覆盖
+        self.assertIn("⚠ 内核里还没有指向细则目录的指引", out)
+
+        self.kernel.write_text(self.kernel.read_text(encoding="utf-8") + f"\n具体做法读 {details.resolve()}/\n",
+                               encoding="utf-8")
+        self.assertIn("内核里的指引：有", run_cli("-w", str(self.wb), "details", "--kernel", str(self.kernel)))
+        self.assertIn("1 篇", run_cli("-w", str(self.wb), "status"))
+
+    def test_refuses_rules_dir(self):
+        with self.assertRaises(SystemExit):                                 # rules/ 下会被常驻加载
+            run_cli("init", str(self.wb), "--details", str(cli.RULES_DIR / "kernel-details"))
+        self.assertFalse(self.wb.exists())                                 # 校验在前，什么都没建
+
+
 class PackagedDocsTest(unittest.TestCase):
     """安装包里带的参考文档是仓库 docs/、examples/ 的副本，两边必须一致。"""
 

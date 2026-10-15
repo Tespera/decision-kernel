@@ -50,6 +50,8 @@ A few hundred lines of Markdown, loaded into every Claude Code session. Each ent
 
 A final conflict-resolution section says which entry wins when several apply at once.
 
+**Optional second layer: scenario notes.** How an entry applies in a specific situation (what "match caution to reversibility" means for deleting data or pushing to a remote) is too concrete for the kernel and would bloat what every session carries. With the notes layer on, these go into per-entry notes that aren't always loaded; the AI reads them when a situation calls for it. Turn it on with `dk init --details`.
+
 ## Real numbers
 
 The author distilled about 10 months of their own Claude Code history:
@@ -205,7 +207,7 @@ flowchart TD
 | Command | Does |
 |---|---|
 | `dk install-commands [--force]` | Install `/distill` and `/decisions` into `~/.claude/commands/`. An existing file with different content is skipped; `--force` backs it up as `.bak` first |
-| `dk init [DIR]` | Create the workbench (default `~/.decision-kernel`, or `$DK_WORKBENCH`) with the extraction guides, the method notes and the example kernel |
+| `dk init [DIR] [--details [NOTES_DIR]]` | Create the workbench (default `~/.decision-kernel`, or `$DK_WORKBENCH`) with the extraction guides, the method notes and the example kernel. `--details` turns on the optional scenario-notes layer (default `~/.claude/decision-kernel-details`; not allowed under `~/.claude/rules/`) |
 | `dk scan [--all \| --since DATE]` | Filter fragments; by default it continues from where the last review ended |
 | `dk batch [--size 150]` | Split fragments into batches for parallel subagents; IDs automatically avoid earlier ones |
 | `dk verify` | Check every quote word for word; exits 1 if anything needs fixing |
@@ -213,6 +215,7 @@ flowchart TD
 | `dk merge` | Append this round's records, motives and kernel mappings to the cumulative files |
 | `dk evidence --kernel PATH` | Build the evidence map |
 | `dk finish` | Record the completion date as the starting point for the next scan |
+| `dk details` | Show scenario notes: which entry each file covers, which entries have none yet, and whether the kernel points to the notes |
 | `dk status` | Show the workbench state |
 
 Each round works in `incr/` and is archived automatically once finished. An unfinished round is never overwritten: `--redo` moves it aside instead of deleting it.
