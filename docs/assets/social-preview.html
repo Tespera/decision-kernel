@@ -1,0 +1,89 @@
+<!doctype html>
+<!-- GitHub 社交预览图源文件（1280×640）。改完后重新截图：
+     python3 -m playwright screenshot --viewport-size="1280, 640" docs/assets/social-preview.html docs/assets/social-preview.png -->
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1280px; height: 640px; }
+  body {
+    background: #FAF9F5;
+    color: #1F1E1D;
+    font-family: "PingFang SC", -apple-system, "Helvetica Neue", sans-serif;
+    padding: 72px 88px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    border-top: 12px solid #D97757;
+  }
+  .name {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace;
+    font-size: 30px;
+    color: #D97757;
+    letter-spacing: 0.5px;
+  }
+  h1 {
+    margin-top: 28px;
+    font-size: 64px;
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: 1px;
+  }
+  .en {
+    margin-top: 18px;
+    font-size: 28px;
+    color: #5E5D59;
+  }
+  .flow {
+    display: flex;
+    align-items: stretch;
+    gap: 14px;
+  }
+  .step {
+    flex: 1;
+    background: #FFFFFF;
+    border: 1.5px solid #E6E3DA;
+    border-radius: 12px;
+    padding: 18px 16px 16px;
+    text-align: center;
+  }
+  .step b {
+    display: block;
+    font-size: 36px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  .step span { display: block; margin-top: 6px; font-size: 20px; color: #5E5D59; }
+  .step.last { background: #D97757; border-color: #D97757; color: #FFFFFF; }
+  .step.last span { color: #FFF1EA; }
+  .arrow { align-self: center; color: #B4B0A5; font-size: 26px; }
+  .foot {
+    margin-top: 18px;
+    font-size: 20px;
+    color: #8A8880;
+  }
+</style>
+</head>
+<body>
+  <div>
+    <div class="name">decision-kernel</div>
+    <h1>让 Claude Code 学会你的判断方式</h1>
+    <div class="en">Distil how you decide from your own Claude Code history, not hand-written rules.</div>
+  </div>
+  <div>
+    <div class="flow">
+      <div class="step"><b>340 万</b><span>字符对话</span></div>
+      <div class="arrow">→</div>
+      <div class="step"><b>1377</b><span>决策片段</span></div>
+      <div class="arrow">→</div>
+      <div class="step"><b>784</b><span>裁决记录</span></div>
+      <div class="arrow">→</div>
+      <div class="step"><b>125</b><span>条动机</span></div>
+      <div class="arrow">→</div>
+      <div class="step last"><b>11</b><span>条决策内核</span></div>
+    </div>
+    <div class="foot">本地脚本 · 零依赖 · 每句原话逐字校验 · 每条内核由你拍板</div>
+  </div>
+</body>
+</html>
