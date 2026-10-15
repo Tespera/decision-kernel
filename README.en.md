@@ -175,7 +175,7 @@ That's exactly what the author tried first. It produced 37 rules, and every one 
 ## How it works
 
 ```mermaid
-flowchart LR
+flowchart TD
     A[Local sessions] -->|dk scan| B[Decision fragments]
     B -->|Claude extracts| C[Decision records]
     C -->|dk verify<br/>word for word| D[Trusted records]

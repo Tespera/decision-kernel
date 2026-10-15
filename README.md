@@ -175,7 +175,7 @@ dk install-commands
 ## 工作原理
 
 ```mermaid
-flowchart LR
+flowchart TD
     A[本地对话记录] -->|dk scan| B[决策片段]
     B -->|Claude 抽取| C[裁决记录]
     C -->|dk verify<br/>逐字校验| D[可信记录]
