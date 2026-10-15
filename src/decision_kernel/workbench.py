@@ -4,6 +4,7 @@
   last-run              上次复盘完成的日期，下次 scan 从这里开始
   EXTRACT_GUIDE.md      抽取裁决记录的规范（给 Claude / subagent 读）
   MOTIVE_GUIDE.md       抽取动机陈述的规范
+  METHOD.md             方法说明；decision-kernel.example.md 作者本人的内核，作初稿格式参考（init 时更新）
   all_records.jsonl     累积的全部裁决记录
   motives.jsonl         累积的动机陈述
   kernel_map.jsonl      裁决记录 → 内核编号 的映射（{"id", "kernel"}）

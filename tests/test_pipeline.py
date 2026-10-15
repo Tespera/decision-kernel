@@ -8,6 +8,7 @@ from pathlib import Path
 from decision_kernel import cli, evidence, records, scan, verify
 
 FIXTURE = Path(__file__).parent / "fixtures" / "claude"
+REPO = Path(__file__).parent.parent
 
 
 def jsonl(path, rows):
@@ -164,6 +165,41 @@ class CliTest(unittest.TestCase):
         self.assertTrue((wb / "incr-2026-09-02" / "extracted" / "records_J1.jsonl").exists())
         run_cli("-w", str(wb), "batch")
         self.assertTrue((wb / "incr" / "batches" / "K1.jsonl").exists())   # J 已被上一轮用掉
+
+    def test_init_puts_reference_docs_in_workbench(self):
+        wb = Path(tempfile.mkdtemp()) / "wb"
+        run_cli("init", str(wb))
+        self.assertEqual((wb / "METHOD.md").read_text(encoding="utf-8"),
+                         (REPO / "docs" / "METHOD.md").read_text(encoding="utf-8"))
+        (wb / "METHOD.md").write_text("旧版", encoding="utf-8")
+        self.assertIn("METHOD.md", run_cli("init", str(wb)))                # 参考文档总是更新到当前版本
+        self.assertNotEqual((wb / "METHOD.md").read_text(encoding="utf-8"), "旧版")
+
+    def test_install_commands_never_silently_overwrites(self):
+        dst = Path(tempfile.mkdtemp()) / "commands"
+        self.assertIn("已安装  /distill", run_cli("install-commands", "--dir", str(dst)))
+        self.assertTrue((dst / "decisions.md").exists())
+        self.assertIn("已是最新  /distill", run_cli("install-commands", "--dir", str(dst)))
+
+        (dst / "distill.md").write_text("我自己的版本", encoding="utf-8")
+        self.assertIn("跳过  /distill", run_cli("install-commands", "--dir", str(dst)))
+        self.assertEqual((dst / "distill.md").read_text(encoding="utf-8"), "我自己的版本")
+
+        self.assertIn("已覆盖  /distill", run_cli("install-commands", "--dir", str(dst), "--force"))
+        self.assertEqual((dst / "distill.md.bak").read_text(encoding="utf-8"), "我自己的版本")
+        self.assertNotEqual((dst / "distill.md").read_text(encoding="utf-8"), "我自己的版本")
+
+
+class PackagedDocsTest(unittest.TestCase):
+    """安装包里带的参考文档是仓库 docs/、examples/ 的副本，两边必须一致。"""
+
+    def test_packaged_copies_match_repo_docs(self):
+        tpl = REPO / "src" / "decision_kernel" / "templates"
+        for packaged, original in (("METHOD.md", "docs/METHOD.md"),
+                                   ("decision-kernel.example.md", "examples/decision-kernel.md")):
+            self.assertEqual((tpl / packaged).read_text(encoding="utf-8"),
+                             (REPO / original).read_text(encoding="utf-8"),
+                             f"{original} 改了，请同步到 templates/{packaged}")
 
 
 if __name__ == "__main__":

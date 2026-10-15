@@ -1,4 +1,4 @@
-"""命令行入口：dk <子命令>。机械步骤都在这里，需要判断的步骤交给 Claude（见 claude/commands/）。"""
+"""命令行入口：dk <子命令>。机械步骤都在这里，需要判断的步骤交给 Claude（见 commands/，用 dk install-commands 装进 Claude Code）。"""
 import argparse
 import collections
 import datetime
@@ -18,11 +18,16 @@ from . import verify as VF
 from .workbench import Workbench
 
 TEMPLATES = ("EXTRACT_GUIDE.md", "MOTIVE_GUIDE.md", "watchlist.md")
+REFERENCES = ("METHOD.md", "decision-kernel.example.md")   # 只读参考，init 时总是更新到当前版本
 FINISHED = ".finished"          # incr/ 里的完成标记，内容是 finish 的日期
 
 
 def _out(msg=""):
     print(msg)
+
+
+def _template(name):
+    return resources.files("decision_kernel.templates").joinpath(name).read_text(encoding="utf-8")
 
 
 def cmd_init(args):
@@ -32,8 +37,13 @@ def cmd_init(args):
     for name in TEMPLATES:
         dst = wb.path(name)
         if not dst.exists():
-            dst.write_text(resources.files("decision_kernel.templates").joinpath(name)
-                           .read_text(encoding="utf-8"), encoding="utf-8")
+            dst.write_text(_template(name), encoding="utf-8")
+            created.append(name)
+    for name in REFERENCES:
+        dst = wb.path(name)
+        text = _template(name)
+        if not dst.exists() or dst.read_text(encoding="utf-8") != text:
+            dst.write_text(text, encoding="utf-8")
             created.append(name)
     for name in ("all_records.jsonl", "motives.jsonl", "kernel_map.jsonl"):
         dst = wb.path(name)
@@ -252,6 +262,31 @@ def cmd_status(args):
         _out(f"历次归档：{' '.join(arch)}")
 
 
+def cmd_install_commands(args):
+    """把 /distill、/decisions 装进 Claude Code。已有同名文件且内容不同：默认跳过，--force 时先备份为 .bak 再覆盖。"""
+    dst_dir = Path(args.dir).expanduser()
+    dst_dir.mkdir(parents=True, exist_ok=True)
+    src_dir = resources.files("decision_kernel").joinpath("commands")
+    for src in sorted(src_dir.iterdir(), key=lambda p: p.name):
+        if not src.name.endswith(".md"):
+            continue
+        text = src.read_text(encoding="utf-8")
+        dst = dst_dir / src.name
+        cmd = "/" + src.name[:-3]
+        if not dst.exists():
+            dst.write_text(text, encoding="utf-8")
+            _out(f"已安装  {cmd}  → {dst}")
+        elif dst.read_text(encoding="utf-8") == text:
+            _out(f"已是最新  {cmd}")
+        elif args.force:
+            bak = dst.with_name(dst.name + ".bak")
+            shutil.copy2(dst, bak)
+            dst.write_text(text, encoding="utf-8")
+            _out(f"已覆盖  {cmd}（原文件备份为 {bak.name}）")
+        else:
+            _out(f"跳过  {cmd}：{dst} 已存在且内容不同。确认要换成 decision-kernel 版本，加 --force（会先备份）")
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(prog="dk", description="从 Claude Code 会话记录蒸馏个人决策内核")
     ap.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
@@ -261,6 +296,11 @@ def main(argv=None):
     p = sub.add_parser("init", help="建工作目录并放入抽取规范等模板")
     p.add_argument("dir", nargs="?")
     p.set_defaults(fn=cmd_init)
+
+    p = sub.add_parser("install-commands", help="把 /distill、/decisions 两个命令装进 Claude Code")
+    p.add_argument("--dir", default="~/.claude/commands", help="安装目录（默认 ~/.claude/commands）")
+    p.add_argument("--force", action="store_true", help="覆盖内容不同的同名命令（先备份为 .bak）")
+    p.set_defaults(fn=cmd_install_commands)
 
     p = sub.add_parser("scan", help="从会话日志和输入历史硬筛决策片段 → incr/corpus_all.jsonl")
     p.add_argument("--since", help="只取该日（YYYY-MM-DD）及之后；默认取 last-run")
